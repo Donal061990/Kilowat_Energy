@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commission &amp; Supplier Payment Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#1B2430;
+    --ink-soft:#4A5568;
+    --paper:#F7F8FA;
+    --card:#FFFFFF;
+    --line:#E3E7ED;
+    --teal:#2F6F5E;
+    --teal-soft:#E4EFEC;
+    --gold:#B8901F;
+    --gold-soft:#F6EFDC;
+    --rust:#B3541E;
+    --rust-soft:#F7E9E0;
+    --shadow: 0 1px 2px rgba(27,36,48,0.04), 0 4px 16px rgba(27,36,48,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter',sans-serif; font-size:14px; line-height:1.5;
+  }
+  h1,h2,h3{font-family:'Fraunces',serif; font-weight:600; margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  #app{max-width:1280px; margin:0 auto; padding:0 24px 60px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 0 18px; border-bottom:1px solid var(--line); margin-bottom:22px;
+  }
+  .brand{display:flex; align-items:center; gap:14px;}
+  .brand-mark{
+    width:40px; height:40px; border-radius:9px; background:var(--ink);
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    font-family:'Fraunces',serif; font-weight:700; font-size:18px;
+  }
+  .brand h1{font-size:21px; letter-spacing:-0.01em;}
+  .brand p{margin:2px 0 0; color:var(--ink-soft); font-size:12.5px;}
+  .who{display:flex; align-items:center; gap:12px;}
+  .who-badge{
+    display:flex; flex-direction:column; align-items:flex-end; font-size:12.5px;
+  }
+  .who-badge b{font-size:13.5px;}
+  .role-pill{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:.06em;
+    padding:2px 8px; border-radius:99px; font-weight:600;
+  }
+  .role-pill.admin{background:var(--gold-soft); color:var(--gold);}
+  .role-pill.entry{background:var(--teal-soft); color:var(--teal);}
+  .role-pill.viewer{background:#EAEDF2; color:var(--ink-soft);}
+  .btn{
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600;
+    cursor:pointer; font-family:inherit; transition:.15s;
+  }
+  .btn:hover{border-color:var(--ink); }
+  .btn-primary{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .btn-primary:hover{background:#0f1620;}
+  .btn-teal{background:var(--teal); color:#fff; border-color:var(--teal);}
+  .btn-teal:hover{background:#265b4d;}
+  .btn-danger{background:#fff; color:var(--rust); border-color:var(--rust-soft);}
+  .btn-danger:hover{background:var(--rust-soft);}
+  .btn-sm{padding:5px 10px; font-size:12px;}
+
+  /* ---------- Login ---------- */
+  .login-wrap{
+    max-width:460px; margin:70px auto; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:36px 32px; box-shadow:var(--shadow);
+  }
+  .login-wrap h2{font-size:22px; margin-bottom:6px;}
+  .login-wrap p.sub{color:var(--ink-soft); margin:0 0 24px; font-size:13.5px;}
+  .tabbar{display:flex; gap:6px; margin-bottom:20px; background:var(--paper); padding:4px; border-radius:9px;}
+  .tabbar button{
+    flex:1; border:none; background:transparent; padding:9px; border-radius:7px;
+    font-family:inherit; font-weight:600; font-size:13px; cursor:pointer; color:var(--ink-soft);
+  }
+  .tabbar button.active{background:var(--card); color:var(--ink); box-shadow:var(--shadow);}
+  label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+  input[type=text],input[type=number],input[type=date],input[type=password],select,textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px;
+    font-family:inherit; font-size:13.5px; color:var(--ink); background:#fff;
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--teal); outline-offset:1px;}
+  .field{margin-bottom:16px;}
+  .error-msg{color:var(--rust); font-size:12.5px; margin-top:8px; min-height:16px;}
+  .hint{color:var(--ink-soft); font-size:11.5px; margin-top:6px;}
+
+  /* ---------- Nav ---------- */
+  .nav{display:flex; gap:6px; margin-bottom:24px; border-bottom:1px solid var(--line);}
+  .nav button{
+    border:none; background:transparent; padding:10px 4px; margin-right:22px; font-family:inherit;
+    font-weight:600; font-size:13.5px; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent;
+  }
+  .nav button.active{color:var(--ink); border-bottom-color:var(--teal);}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* ---------- KPI ticker ---------- */
+  .ticker{
+    display:flex; background:var(--ink); border-radius:12px; padding:20px 22px; margin-bottom:24px;
+    gap:0; overflow-x:auto;
+  }
+  .kpi{flex:1; min-width:150px; padding:0 22px; border-right:1px solid rgba(255,255,255,0.12); color:#fff;}
+  .kpi:last-child{border-right:none;}
+  .kpi span{display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#A9B2C0; margin-bottom:6px;}
+  .kpi b{font-family:'IBM Plex Mono',monospace; font-size:21px; font-weight:600;}
+  .kpi b.gold{color:#E9C766;}
+  .kpi b.rust{color:#E39468;}
+
+  /* ---------- Filters ---------- */
+  .filters{
+    display:flex; flex-wrap:wrap; gap:12px; background:var(--card); border:1px solid var(--line);
+    border-radius:10px; padding:14px 16px; margin-bottom:22px; align-items:flex-end;
+  }
+  .filters .field{margin-bottom:0; min-width:150px;}
+  .filters label{margin-bottom:5px;}
+
+  /* ---------- Cards / grid ---------- */
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px;}
+  .card h3{font-size:14.5px; margin-bottom:2px;}
+  .card p.desc{color:var(--ink-soft); font-size:12px; margin:0 0 12px;}
+  .chart-box{position:relative; height:260px;}
+
+  /* ---------- Table ---------- */
+  table{width:100%; border-collapse:collapse; font-size:12.8px;}
+  th{
+    text-align:left; padding:9px 10px; background:var(--paper); color:var(--ink-soft);
+    font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em;
+    border-bottom:1px solid var(--line); white-space:nowrap; position:sticky; top:0;
+  }
+  td{padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  tr:hover td{background:#FAFBFC;}
+  .table-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:12px; max-height:520px; overflow-y:auto;}
+  .pill{padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600;}
+  .pill.ok{background:var(--teal-soft); color:var(--teal);}
+  .pill.pending{background:var(--gold-soft); color:var(--gold);}
+  .pill.overdue{background:var(--rust-soft); color:var(--rust);}
+  .empty{padding:40px 20px; text-align:center; color:var(--ink-soft);}
+  .empty b{display:block; color:var(--ink); font-size:15px; margin-bottom:4px; font-family:'Fraunces',serif;}
+
+  /* ---------- Form ---------- */
+  .form-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px 18px;}
+  .form-actions{display:flex; gap:10px; margin-top:20px;}
+  .toggle-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;}
+
+  .modal-bg{
+    display:none; position:fixed; inset:0; background:rgba(20,26,35,0.5); z-index:50;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-bg.active{display:flex;}
+  .modal{background:#fff; border-radius:14px; padding:24px 26px; max-width:720px; width:100%; max-height:86vh; overflow-y:auto;}
+  .modal h3{margin-bottom:16px;}
+
+  .toast{
+    position:fixed; bottom:24px; right:24px; background:var(--ink); color:#fff; padding:12px 18px;
+    border-radius:9px; font-size:13px; font-weight:600; box-shadow:var(--shadow); z-index:80;
+    opacity:0; transform:translateY(8px); transition:.25s;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  .searchbar{display:flex; gap:10px; margin-bottom:14px;}
+  .searchbar input{flex:1;}
+
+  .subtle-list{list-style:none; margin:0; padding:0;}
+  .subtle-list li{display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
+  .subtle-list li:last-child{border-bottom:none;}
+
+
+
+  @media (max-width:900px){
+    .form-grid{grid-template-columns:1fr 1fr;}
+    .grid-2{grid-template-columns:1fr;}
+  }
+  @media (max-width:600px){
+    .form-grid{grid-template-columns:1fr;}
+    .ticker{flex-wrap:wrap;}
+    .kpi{border-right:none; border-bottom:1px solid rgba(255,255,255,0.12); padding:10px 0; flex:1 1 45%;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================= CONFIG ============================= */
+const FIELDS = [
+  {key:'businessName', label:'Business Name', type:'text', required:true, col:1},
+  {key:'mpan', label:'MPAN', type:'text', col:1},
+  {key:'mrn', label:'MRN', type:'text', col:1},
+  {key:'spoid', label:'SPOID', type:'text', col:1},
+  {key:'saleType', label:'Sale Type', type:'select', options:['New','Renewal','Switch','Additional'], col:1},
+  {key:'supplierName', label:'Supplier Name', type:'text', required:true, col:1},
+  {key:'saleConsumption', label:'Sale Consumption', type:'number', col:1},
+  {key:'onSupplyConsumption', label:'On Supply Consumption', type:'number', col:1},
+  {key:'saleDate', label:'Sale Date', type:'date', col:1},
+  {key:'contractStartDate', label:'Contract Start Date', type:'date', col:1},
+  {key:'duration', label:'Duration (months)', type:'number', col:1},
+  {key:'renewalDate', label:'Renewal Date', type:'date', col:1},
+  {key:'invoiceNo', label:'Invoice No', type:'text', col:1},
+  {key:'invoiceDate', label:'Invoice Date', type:'date', col:1},
+  {key:'saleCommission', label:'Sale Commission (£)', type:'number', col:1},
+  {key:'liveDate', label:'Live Date', type:'date', col:1},
+  {key:'agentName', label:'Agent Name', type:'text', required:true, col:1},
+  {key:'percentage', label:'Percentage (%)', type:'number', col:1},
+  {key:'receivedCommission', label:'Received Commission (£)', type:'number', col:1},
+  {key:'paymentType', label:'Payment Type', type:'select', options:['Bank Transfer','Cheque','Cash','Adjustment','Other'], col:1},
+  {key:'days', label:'Days', type:'number', col:1},
+];
+const HEADER_ALIASES = {
+  'businessname':'businessName','mpan':'mpan','mrn':'mrn','spoid':'spoid','saletype':'saleType',
+  'suppliername':'supplierName','saleconsumption':'saleConsumption','onsupplyconsumption':'onSupplyConsumption',
+  'saledate':'saleDate','contractstartdate':'contractStartDate','duration':'duration','renewaldate':'renewalDate',
+  'invoiceno':'invoiceNo','invoicedate':'invoiceDate','salecommision':'saleCommission','salecommission':'saleCommission',
+  'livedate':'liveDate','agentname':'agentName','percentage':'percentage',
+  'receievedcommision':'receivedCommission','receivedcommision':'receivedCommission','receivedcommission':'receivedCommission',
+  'paymenttype':'paymentType','days':'days'
+};
+/* ============================= BACKEND CONFIG ============================= */
+// Optional: paste your Apps Script Web app URL here before sharing this file.
+// If set, anyone opening this file connects automatically — no setup screen for them.
+const DEFAULT_SHEET_URL = '';
+
+const DEFAULT_OVERDUE_DAYS = 60;
+
+/* ============================= STATE ============================= */
+let state = {
+  sheetUrl: localStorage.getItem('commission_sheet_url') || DEFAULT_SHEET_URL || '',
+  records: [],
+  accounts: [],
+  overdueDays: DEFAULT_OVERDUE_DAYS,
+  role: null,        // 'admin' | 'entry'
+  currentUser: null,
+  currentView: 'dashboard',
+  editingId: null,
+  charts: {}
+};
+
+/* ============================= HELPERS ============================= */
+function uid(){ return 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function money(n){ n = Number(n)||0; return '£' + n.toLocaleString(undefined,{minimumFractionDigits:0, maximumFractionDigits:2}); }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function norm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function monthKey(d){ if(!d) return null; const dt = new Date(d); if(isNaN(dt)) return null; return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'); }
+function commissionStatus(r){
+  const sale = Number(r.saleCommission)||0, recv = Number(r.receivedCommission)||0;
+  if(sale>0 && recv>=sale) return 'received';
+  const days = Number(r.days)||0;
+  if(days > state.overdueDays) return 'overdue';
+  return 'pending';
+}
+function randomSalt(){ return Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+async function hashPassword(password, salt){
+  const enc = new TextEncoder();
+  const data = enc.encode(salt + ':' + password);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function findAccount(username){
+  return state.accounts.find(a=>a.username.toLowerCase() === String(username||'').toLowerCase());
+}
+
+/* ============================= GOOGLE SHEETS BACKEND ============================= */
+function sheetGet(type){
+  return new Promise((resolve)=>{
+    if(!state.sheetUrl){ resolve(null); return; }
+    const cbName = 'cb_' + type + '_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+    let done = false;
+    const script = document.createElement('script');
+    const cleanup = ()=>{ delete window[cbName]; if(script.parentNode) script.parentNode.removeChild(script); };
+    const timer = setTimeout(()=>{ if(done) return; done=true; cleanup(); resolve(null); }, 15000);
+    window[cbName] = (data)=>{ if(done) return; done=true; clearTimeout(timer); cleanup(); resolve(data); };
+    script.onerror = ()=>{ if(done) return; done=true; clearTimeout(timer); cleanup(); resolve(null); };
+    const sep = state.sheetUrl.includes('?') ? '&' : '?';
+    script.src = state.sheetUrl + sep + 'type=' + type + '&callback=' + cbName + '&_=' + Date.now();
+    document.body.appendChild(script);
+  });
+}
+async function sheetSet(type, extra){
+  if(!state.sheetUrl) return false;
+  try{
+    await fetch(state.sheetUrl, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({type: type}, extra))
+    });
+    return true;
+  }catch(e){ return false; }
+}
+async function loadAllFromSheet(){
+  const [recData, accData, setData] = await Promise.all([
+    sheetGet('records'), sheetGet('accounts'), sheetGet('settings')
+  ]);
+  const recOk = !!recData, accOk = !!accData, setOk = !!setData;
+  state.records = (recData && Array.isArray(recData.records)) ? recData.records : [];
+  state.accounts = (accData && Array.isArray(accData.accounts)) ? accData.accounts : [];
+  const settings = (setData && setData.settings) ? setData.settings : {};
+  state.overdueDays = settings.overdueDays ? Number(settings.overdueDays) : DEFAULT_OVERDUE_DAYS;
+  return {recOk, accOk, setOk, anyOk: recOk||accOk||setOk};
+}
+async function saveAccounts(){
+  const ok = await sheetSet('accounts', {accounts: state.accounts});
+  if(!ok) toast('Could not reach the Sheet — try again');
+  return ok;
+}
+async function saveOverdueDays(){
+  const ok = await sheetSet('settings', {settings: {overdueDays: state.overdueDays}});
+  if(!ok) toast('Could not save threshold to the Sheet');
+  return ok;
+}
+async function saveRecords(){
+  const ok = await sheetSet('records', {records: state.records});
+  if(!ok) toast('Could not reach the Sheet — try again');
+  return ok;
+}
+function setSheetUrl(url){
+  state.sheetUrl = url.trim();
+  localStorage.setItem('commission_sheet_url', state.sheetUrl);
+}
+
+/* ============================= BOOT (connect to Sheet first) ============================= */
+async function boot(){
+  const app = document.getElementById('app');
+  if(!state.sheetUrl){ app.innerHTML = renderConnect(); attachConnectEvents(); return; }
+  app.innerHTML = '<div class="login-wrap"><p class="hint">Connecting to your Google Sheet…</p></div>';
+  const result = await loadAllFromSheet();
+  if(!result.anyOk){ app.innerHTML = renderConnect(true); attachConnectEvents(); return; }
+  render();
+}
+function renderConnect(failed){
+  return `
+  <div class="login-wrap">
+    <div class="brand" style="margin-bottom:22px;">
+      <div class="brand-mark">£</div>
+      <div><h1>Commission Ledger</h1><p>Supplier &amp; agent commission tracker</p></div>
+    </div>
+    <h2 style="font-size:20px;">Connect to your Google Sheet</h2>
+    <p class="sub">${failed ? 'Could not reach that Sheet — double check the URL and deployment settings, then try again.' : 'This tool stores everything in a Google Sheet you control. Paste the Web app URL from your Apps Script deployment.'}</p>
+    <div class="field"><label>Web app URL</label><input type="text" id="connect-url-input" value="${escapeHtml(state.sheetUrl)}" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <button class="btn btn-teal" id="connect-btn" style="width:100%;">Connect</button>
+    <div class="error-msg" id="connect-error"></div>
+    <p class="hint">This is saved only in this browser. Everyone on your team pastes the same URL once, the first time they open this file.</p>
+  </div>`;
+}
+function attachConnectEvents(){
+  document.getElementById('connect-btn').onclick = async ()=>{
+    const url = document.getElementById('connect-url-input').value.trim();
+    if(!url){ document.getElementById('connect-error').textContent = 'Paste the Web app URL first.'; return; }
+    setSheetUrl(url);
+    await boot();
+  };
+}
+
+/* ============================= RENDER ROOT ============================= */
+function render(){
+  const app = document.getElementById('app');
+  if(!state.role){
+    if(state.accounts.length===0){ app.innerHTML = renderBootstrap(); attachBootstrapEvents(); return; }
+    app.innerHTML = renderLogin(); attachLoginEvents(); return;
+  }
+  app.innerHTML = renderShell();
+  attachShellEvents();
+  renderView();
+}
+
+/* ---------------- BOOTSTRAP (first admin account) ---------------- */
+function renderBootstrap(){
+  return `
+  <div class="login-wrap">
+    <div class="brand" style="margin-bottom:22px;">
+      <div class="brand-mark">£</div>
+      <div><h1>Commission Ledger</h1><p>Supplier &amp; agent commission tracker</p></div>
+    </div>
+    <h2>Set up your admin account</h2>
+    <p class="sub">No accounts exist yet. Create the first admin login — only you know these details, and you'll create every other account from the Admin tab afterwards.</p>
+    <div class="field"><label>Admin username</label><input type="text" id="boot-username" placeholder="e.g. geetu" /></div>
+    <div class="field"><label>Password</label><input type="password" id="boot-password" placeholder="Choose a password" /></div>
+    <div class="field"><label>Confirm password</label><input type="password" id="boot-password2" placeholder="Re-enter password" /></div>
+    <button class="btn btn-primary" id="boot-create-btn" style="width:100%;">Create admin account</button>
+    <div class="error-msg" id="boot-error"></div>
+  </div>`;
+}
+function attachBootstrapEvents(){
+  document.getElementById('boot-password2').addEventListener('keydown', (e)=>{ if(e.key==='Enter') document.getElementById('boot-create-btn').click(); });
+  document.getElementById('boot-create-btn').onclick = async ()=>{
+    const username = document.getElementById('boot-username').value.trim();
+    const pw = document.getElementById('boot-password').value;
+    const pw2 = document.getElementById('boot-password2').value;
+    const err = document.getElementById('boot-error');
+    if(!username){ err.textContent='Please choose a username.'; return; }
+    if(pw.length < 4){ err.textContent='Password should be at least 4 characters.'; return; }
+    if(pw !== pw2){ err.textContent='Passwords do not match.'; return; }
+    const salt = randomSalt();
+    const hash = await hashPassword(pw, salt);
+    state.accounts.push({username, salt, hash, role:'admin', createdAt:new Date().toISOString()});
+    await saveAccounts();
+    state.role='admin'; state.currentUser=username; state.currentView='dashboard';
+    toast('Admin account created');
+    render();
+  };
+}
+
+/* ---------------- LOGIN ---------------- */
+function renderLogin(){
+  return `
+  <div class="login-wrap">
+    <div class="brand" style="margin-bottom:22px;">
+      <div class="brand-mark">£</div>
+      <div><h1>Commission Ledger</h1><p>Supplier &amp; agent commission tracker</p></div>
+    </div>
+    <h2 style="font-size:20px;">Sign in</h2>
+    <p class="sub">Accounts are created by your admin — ask them if you don't have one yet.</p>
+    <div class="field"><label>Username</label><input type="text" id="login-username" placeholder="e.g. priya" /></div>
+    <div class="field"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" /></div>
+    <button class="btn btn-teal" id="login-btn" style="width:100%;">Sign in</button>
+    <div class="error-msg" id="login-error"></div>
+  </div>`;
+}
+function attachLoginEvents(){
+  const doLogin = async ()=>{
+    const username = document.getElementById('login-username').value.trim();
+    const pw = document.getElementById('login-password').value;
+    const err = document.getElementById('login-error');
+    const account = findAccount(username);
+    if(!account){ err.textContent='No account with that username.'; return; }
+    const hash = await hashPassword(pw, account.salt);
+    if(hash !== account.hash){ err.textContent='Incorrect password.'; return; }
+    state.role = account.role; state.currentUser = account.username; state.currentView='dashboard';
+    render();
+  };
+  document.getElementById('login-btn').onclick = doLogin;
+  document.getElementById('login-password').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
+}
+
+/* ---------------- SHELL ---------------- */
+function renderShell(){
+  return `
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">£</div>
+      <div><h1>Commission Ledger</h1><p>Supplier &amp; agent commission tracker</p></div>
+    </div>
+    <div class="who">
+      <div class="who-badge"><b>${escapeHtml(state.currentUser)}</b><span class="role-pill ${state.role}">${state.role==='admin'?'Admin':state.role==='viewer'?'Viewer':'Data Entry'}</span></div>
+      <button class="btn btn-sm" id="refresh-btn">↻ Refresh</button>
+      <button class="btn btn-sm" id="logout-btn">Sign out</button>
+    </div>
+  </div>
+  <div class="nav">
+    <button data-view="dashboard" class="${state.currentView==='dashboard'?'active':''}">Dashboard</button>
+    ${state.role!=='viewer' ? `<button data-view="entry" class="${state.currentView==='entry'?'active':''}">Data Entry</button>` : ''}
+    <button data-view="records" class="${state.currentView==='records'?'active':''}">Records</button>
+    ${state.role==='admin' ? `<button data-view="admin" class="${state.currentView==='admin'?'active':''}">Admin</button>` : ''}
+  </div>
+  <div id="view-root"></div>
+  <div class="modal-bg" id="modal-bg"><div class="modal" id="modal-content"></div></div>
+  `;
+}
+function attachShellEvents(){
+  document.getElementById('refresh-btn').onclick = async ()=>{
+    toast('Refreshing from Sheet…');
+    const result = await loadAllFromSheet();
+    if(!result.anyOk){ toast('Could not reach the Sheet'); return; }
+    toast('Up to date');
+    render();
+  };
+  document.getElementById('logout-btn').onclick = ()=>{ state.role=null; state.currentUser=null; render(); };
+  document.querySelectorAll('.nav button[data-view]').forEach(b=>{
+    b.onclick = ()=>{ state.currentView = b.getAttribute('data-view'); render(); };
+  });
+  document.getElementById('modal-bg').addEventListener('click', (e)=>{
+    if(e.target.id==='modal-bg') closeModal();
+  });
+}
+function closeModal(){ document.getElementById('modal-bg').classList.remove('active'); document.getElementById('modal-content').innerHTML=''; }
+function openModal(html){ document.getElementById('modal-content').innerHTML = html; document.getElementById('modal-bg').classList.add('active'); }
+
+function renderView(){
+  if(state.role==='viewer' && (state.currentView==='entry' || state.currentView==='admin')){ state.currentView='dashboard'; }
+  const root = document.getElementById('view-root');
+  if(state.currentView==='dashboard') root.innerHTML = renderDashboard();
+  else if(state.currentView==='entry') root.innerHTML = renderEntry();
+  else if(state.currentView==='records') root.innerHTML = renderRecords();
+  else if(state.currentView==='admin') root.innerHTML = renderAdmin();
+
+  if(state.currentView==='dashboard'){ attachDashboardEvents(); buildCharts(); }
+  if(state.currentView==='entry'){ attachEntryEvents(); }
+  if(state.currentView==='records'){ attachRecordsEvents(); }
+  if(state.currentView==='admin'){ attachAdminEvents(); }
+}
+
+/* ============================= FILTERS ============================= */
+function uniqueVals(key){
+  return [...new Set(state.records.map(r=>r[key]).filter(Boolean))].sort();
+}
+function getFilteredRecords(){
+  const f = state._filters || {};
+  return state.records.filter(r=>{
+    if(f.supplier && r.supplierName!==f.supplier) return false;
+    if(f.agent && r.agentName!==f.agent) return false;
+    if(f.saleType && r.saleType!==f.saleType) return false;
+    if(f.paymentType && r.paymentType!==f.paymentType) return false;
+    if(f.from && r.saleDate && r.saleDate < f.from) return false;
+    if(f.to && r.saleDate && r.saleDate > f.to) return false;
+    return true;
+  });
+}
+function renderFilterBar(){
+  const suppliers = uniqueVals('supplierName');
+  const agents = uniqueVals('agentName');
+  return `
+  <div class="filters">
+    <div class="field"><label>From</label><input type="date" id="f-from"></div>
+    <div class="field"><label>To</label><input type="date" id="f-to"></div>
+    <div class="field"><label>Supplier</label><select id="f-supplier"><option value="">All suppliers</option>${suppliers.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}</select></div>
+    <div class="field"><label>Agent</label><select id="f-agent"><option value="">All agents</option>${agents.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('')}</select></div>
+    <div class="field"><label>Sale Type</label><select id="f-saletype"><option value="">All types</option>${FIELDS.find(f=>f.key==='saleType').options.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div>
+    <div class="field"><label>Payment Type</label><select id="f-paytype"><option value="">All</option>${FIELDS.find(f=>f.key==='paymentType').options.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div>
+    <button class="btn btn-sm" id="f-reset">Reset</button>
+  </div>`;
+}
+function attachFilterEvents(onChange){
+  const ids = {from:'f-from', to:'f-to', supplier:'f-supplier', agent:'f-agent', saleType:'f-saletype', paymentType:'f-paytype'};
+  const f = state._filters || {};
+  document.getElementById('f-from').value = f.from||'';
+  document.getElementById('f-to').value = f.to||'';
+  document.getElementById('f-supplier').value = f.supplier||'';
+  document.getElementById('f-agent').value = f.agent||'';
+  document.getElementById('f-saletype').value = f.saleType||'';
+  document.getElementById('f-paytype').value = f.paymentType||'';
+  Object.entries(ids).forEach(([k,id])=>{
+    document.getElementById(id).addEventListener('change', (e)=>{
+      state._filters = state._filters || {};
+      state._filters[k] = e.target.value;
+      onChange();
+    });
+  });
+  document.getElementById('f-reset').onclick = ()=>{ state._filters = {}; onChange(); };
+}
+
+/* ============================= DASHBOARD ============================= */
+function renderDashboard(){
+  const recs = getFilteredRecords();
+  if(state.records.length===0){
+    return `${renderFilterBar()}<div class="card"><div class="empty"><b>No records yet</b>Head to Data Entry to log your first sale — the dashboard fills in automatically.</div></div>`;
+  }
+  const totalSale = recs.reduce((s,r)=>s+(Number(r.saleCommission)||0),0);
+  const totalReceived = recs.reduce((s,r)=>s+(Number(r.receivedCommission)||0),0);
+  let pendingAmt=0, overdueAmt=0;
+  recs.forEach(r=>{
+    const outstanding = (Number(r.saleCommission)||0) - (Number(r.receivedCommission)||0);
+    if(outstanding<=0) return;
+    if(commissionStatus(r)==='overdue') overdueAmt += outstanding; else pendingAmt += outstanding;
+  });
+  const receivedPct = totalSale ? Math.round((totalReceived/totalSale)*100) : 0;
+
+  return `
+  ${renderFilterBar()}
+  <div class="ticker">
+    <div class="kpi"><span>Total Sales Logged</span><b>${recs.length}</b></div>
+    <div class="kpi"><span>Total Sale Commission</span><b>${money(totalSale)}</b></div>
+    <div class="kpi"><span>Received Commission</span><b class="gold">${money(totalReceived)}</b></div>
+    <div class="kpi"><span>Pending (within ${state.overdueDays}d)</span><b>${money(pendingAmt)}</b></div>
+    <div class="kpi"><span>Overdue (${state.overdueDays}d+)</span><b class="rust">${money(overdueAmt)}</b></div>
+    <div class="kpi"><span>Received Rate</span><b>${receivedPct}%</b></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card"><h3>Commission Status</h3><p class="desc">Received vs pending vs overdue, by amount</p><div class="chart-box"><canvas id="chart-status"></canvas></div></div>
+    <div class="card"><h3>Commission by Supplier</h3><p class="desc">Sale commission, top suppliers</p><div class="chart-box"><canvas id="chart-supplier"></canvas></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3>Agent Leaderboard</h3><p class="desc">Sale commission by agent</p><div class="chart-box"><canvas id="chart-agent"></canvas></div></div>
+    <div class="card"><h3>Monthly Trend</h3><p class="desc">Sale vs received commission by month</p><div class="chart-box"><canvas id="chart-trend"></canvas></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3>Outstanding Aging</h3><p class="desc">Unreceived commission grouped by days outstanding</p><div class="chart-box"><canvas id="chart-aging"></canvas></div></div>
+    <div class="card"><h3>Sale Type Mix</h3><p class="desc">Count of sales by type</p><div class="chart-box"><canvas id="chart-saletype"></canvas></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3>Payment Type Mix</h3><p class="desc">Received commission by payment method</p><div class="chart-box"><canvas id="chart-paytype"></canvas></div></div>
+  </div>
+  <div class="card">
+    <h3>Renewals Due (next 60 days)</h3><p class="desc">Contracts approaching renewal</p>
+    ${renderRenewalsTable(recs)}
+  </div>
+  `;
+}
+function renderRenewalsTable(recs){
+  const today = new Date();
+  const cutoff = new Date(); cutoff.setDate(today.getDate()+60);
+  const upcoming = recs.filter(r=>{
+    if(!r.renewalDate) return false;
+    const d = new Date(r.renewalDate);
+    return !isNaN(d) && d>=today && d<=cutoff;
+  }).sort((a,b)=> new Date(a.renewalDate)-new Date(b.renewalDate));
+  if(upcoming.length===0) return `<div class="empty"><b>Nothing due soon</b>No renewals fall within the next 60 days.</div>`;
+  return `<div class="table-scroll"><table><thead><tr><th>Business</th><th>Supplier</th><th>Agent</th><th>Renewal Date</th><th>MPAN</th></tr></thead><tbody>
+  ${upcoming.map(r=>`<tr><td>${escapeHtml(r.businessName)}</td><td>${escapeHtml(r.supplierName)}</td><td>${escapeHtml(r.agentName)}</td><td>${escapeHtml(r.renewalDate)}</td><td>${escapeHtml(r.mpan)}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function attachDashboardEvents(){
+  if(state.records.length===0) { attachFilterEvents(()=>{ renderView(); }); return; }
+  attachFilterEvents(()=>{ renderView(); });
+}
+function destroyCharts(){ Object.values(state.charts).forEach(c=>{ try{c.destroy();}catch(e){} }); state.charts = {}; }
+function buildCharts(){
+  destroyCharts();
+  if(state.records.length===0) return;
+  const recs = getFilteredRecords();
+  const palette = ['#2F6F5E','#B8901F','#B3541E','#4A5568','#6E9B8C','#D9B14F','#8C4A2E','#1B2430'];
+
+  // Status: received / pending / overdue
+  const statusTotals = {received:0, pending:0, overdue:0};
+  recs.forEach(r=>{
+    const recv = Number(r.receivedCommission)||0;
+    const outstanding = (Number(r.saleCommission)||0) - recv;
+    const st = commissionStatus(r);
+    if(st==='received') statusTotals.received += recv;
+    else if(st==='overdue') statusTotals.overdue += Math.max(outstanding,0);
+    else statusTotals.pending += Math.max(outstanding,0);
+  });
+  state.charts.status = new Chart(document.getElementById('chart-status'), {
+    type:'doughnut',
+    data:{labels:['Received','Pending','Overdue'], datasets:[{data:[statusTotals.received, statusTotals.pending, statusTotals.overdue], backgroundColor:['#2F6F5E','#B8901F','#B3541E']}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+  });
+
+  // Supplier
+  const bySupplier = {};
+  recs.forEach(r=>{ const k=r.supplierName||'Unspecified'; bySupplier[k]=(bySupplier[k]||0)+(Number(r.saleCommission)||0); });
+  const supTop = Object.entries(bySupplier).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  state.charts.supplier = new Chart(document.getElementById('chart-supplier'), {
+    type:'bar', data:{labels:supTop.map(x=>x[0]), datasets:[{label:'Sale Commission', data:supTop.map(x=>x[1]), backgroundColor:'#2F6F5E', borderRadius:5}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}, responsive:true, maintainAspectRatio:false}
+  });
+
+  // Agent
+  const byAgent = {};
+  recs.forEach(r=>{ const k=r.agentName||'Unassigned'; byAgent[k]=(byAgent[k]||0)+(Number(r.saleCommission)||0); });
+  const agTop = Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  state.charts.agent = new Chart(document.getElementById('chart-agent'), {
+    type:'bar', data:{labels:agTop.map(x=>x[0]), datasets:[{label:'Sale Commission', data:agTop.map(x=>x[1]), backgroundColor:'#B8901F', borderRadius:5}]},
+    options:{indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}}, responsive:true, maintainAspectRatio:false}
+  });
+
+  // Monthly trend
+  const trend = {};
+  recs.forEach(r=>{ const m = monthKey(r.saleDate); if(!m) return; trend[m]=trend[m]||{sale:0,recv:0}; trend[m].sale+=Number(r.saleCommission)||0; trend[m].recv+=Number(r.receivedCommission)||0; });
+  const months = Object.keys(trend).sort();
+  state.charts.trend = new Chart(document.getElementById('chart-trend'), {
+    type:'line', data:{labels:months, datasets:[
+      {label:'Sale Commission', data:months.map(m=>trend[m].sale), borderColor:'#1B2430', backgroundColor:'transparent', tension:.3},
+      {label:'Received Commission', data:months.map(m=>trend[m].recv), borderColor:'#2F6F5E', backgroundColor:'transparent', tension:.3}
+    ]}, options:{responsive:true, maintainAspectRatio:false}
+  });
+
+  // Aging buckets
+  const buckets = {'0-30':0,'31-60':0,'61-90':0,'90+':0};
+  recs.forEach(r=>{
+    const outstanding = (Number(r.saleCommission)||0) - (Number(r.receivedCommission)||0);
+    if(outstanding<=0) return;
+    const d = Number(r.days)||0;
+    if(d<=30) buckets['0-30']+=outstanding; else if(d<=60) buckets['31-60']+=outstanding; else if(d<=90) buckets['61-90']+=outstanding; else buckets['90+']+=outstanding;
+  });
+  state.charts.aging = new Chart(document.getElementById('chart-aging'), {
+    type:'bar', data:{labels:Object.keys(buckets), datasets:[{label:'Outstanding', data:Object.values(buckets), backgroundColor:'#B3541E', borderRadius:5}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}, responsive:true, maintainAspectRatio:false}
+  });
+
+  // Sale type mix
+  const byType = {};
+  recs.forEach(r=>{ const k=r.saleType||'Unspecified'; byType[k]=(byType[k]||0)+1; });
+  state.charts.saletype = new Chart(document.getElementById('chart-saletype'), {
+    type:'doughnut', data:{labels:Object.keys(byType), datasets:[{data:Object.values(byType), backgroundColor:palette}]},
+    options:{responsive:true, maintainAspectRatio:false}
+  });
+
+  // Payment type mix
+  const byPay = {};
+  recs.forEach(r=>{ const k=r.paymentType||'Unspecified'; byPay[k]=(byPay[k]||0)+(Number(r.receivedCommission)||0); });
+  state.charts.paytype = new Chart(document.getElementById('chart-paytype'), {
+    type:'doughnut', data:{labels:Object.keys(byPay), datasets:[{data:Object.values(byPay), backgroundColor:palette}]},
+    options:{responsive:true, maintainAspectRatio:false}
+  });
+}
+
+/* ============================= DATA ENTRY ============================= */
+function renderEntry(){
+  return `
+  <div class="toggle-row">
+    <h2 style="font-size:18px;">Log a new sale</h2>
+    <button class="btn btn-sm" id="bulk-toggle">Bulk import (paste rows)</button>
+  </div>
+  <div class="card" id="bulk-panel" style="display:none; margin-bottom:20px;">
+    <h3>Bulk import</h3>
+    <p class="desc">Paste rows copied from Excel (tab-separated), including the header row from your original sheet.</p>
+    <textarea id="bulk-text" rows="6" placeholder="business name	MPAN	MRN	SPOID	Sale Type	Supplier name ...&#10;Acme Ltd	1234...	..."></textarea>
+    <div class="form-actions"><button class="btn btn-teal" id="bulk-import-btn">Import rows</button><span class="hint" id="bulk-status"></span></div>
+  </div>
+  <div class="card">
+    <form id="entry-form">
+      <div class="form-grid">
+        ${FIELDS.map(f=>renderFieldInput(f)).join('')}
+      </div>
+      <div class="error-msg" id="entry-error"></div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-teal">Save record</button>
+        <button type="button" class="btn" id="entry-clear">Clear form</button>
+      </div>
+    </form>
+  </div>`;
+}
+function renderFieldInput(f, vals){
+  vals = vals || {};
+  const val = vals[f.key]!==undefined ? vals[f.key] : '';
+  if(f.type==='select'){
+    return `<div class="field"><label>${f.label}${f.required?' *':''}</label>
+    <select data-key="${f.key}"><option value="">Select…</option>${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+  }
+  if(f.key==='agentName' || f.key==='supplierName'){
+    const suggestions = [...new Set(state.records.map(r=>r[f.key]).filter(Boolean))];
+    return `<div class="field"><label>${f.label}${f.required?' *':''}</label>
+    <input type="text" data-key="${f.key}" value="${escapeHtml(val)}" list="dl-${f.key}" />
+    <datalist id="dl-${f.key}">${suggestions.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist></div>`;
+  }
+  return `<div class="field"><label>${f.label}${f.required?' *':''}</label>
+  <input type="${f.type}" data-key="${f.key}" value="${escapeHtml(val)}" ${f.type==='number'?'step="any"':''} /></div>`;
+}
+function attachEntryEvents(){
+  document.getElementById('bulk-toggle').onclick = ()=>{
+    const p = document.getElementById('bulk-panel');
+    p.style.display = p.style.display==='none' ? 'block' : 'none';
+  };
+  document.getElementById('bulk-import-btn').onclick = async ()=>{
+    const raw = document.getElementById('bulk-text').value.trim();
+    if(!raw){ return; }
+    const result = parseBulk(raw);
+    if(result.error){ document.getElementById('bulk-status').textContent = result.error; return; }
+    state.records.push(...result.records);
+    await saveRecords();
+    document.getElementById('bulk-status').textContent = `Imported ${result.records.length} record(s).`;
+    document.getElementById('bulk-text').value='';
+    toast(`Imported ${result.records.length} record(s)`);
+  };
+  document.getElementById('entry-clear').onclick = ()=>{ renderView(); };
+  document.getElementById('entry-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    const rec = { id: uid(), createdBy: state.currentUser, createdAt: new Date().toISOString() };
+    document.querySelectorAll('#entry-form [data-key]').forEach(el=>{ rec[el.getAttribute('data-key')] = el.value; });
+    const missing = FIELDS.filter(f=>f.required && !rec[f.key]);
+    if(missing.length){ document.getElementById('entry-error').textContent = 'Please fill: '+missing.map(f=>f.label).join(', '); return; }
+    state.records.push(rec);
+    await saveRecords();
+    toast('Record saved');
+    renderView();
+  };
+}
+function parseBulk(raw){
+  const lines = raw.split(/\r?\n/).filter(l=>l.trim().length);
+  if(lines.length<2) return {error:'Paste a header row plus at least one data row.'};
+  const delim = lines[0].includes('\t') ? '\t' : ',';
+  const headers = lines[0].split(delim).map(h=>norm(h));
+  const mapped = headers.map(h=>HEADER_ALIASES[h] || null);
+  if(!mapped.some(m=>m)) return {error:'Could not recognize any columns — check the header row matches your sheet.'};
+  const records = [];
+  for(let i=1;i<lines.length;i++){
+    const cells = lines[i].split(delim);
+    if(cells.every(c=>!c.trim())) continue;
+    const rec = { id: uid(), createdBy: state.currentUser, createdAt: new Date().toISOString() };
+    mapped.forEach((key,idx)=>{ if(key) rec[key] = (cells[idx]||'').trim(); });
+    records.push(rec);
+  }
+  return {records};
+}
+
+/* ============================= RECORDS ============================= */
+function renderRecords(){
+  const recs = state.records;
+  return `
+  <div class="toggle-row">
+    <h2 style="font-size:18px;">All records (${recs.length})</h2>
+    <button class="btn btn-sm" id="export-csv-btn">Export CSV</button>
+  </div>
+  <div class="searchbar"><input type="text" id="rec-search" placeholder="Search by business, MPAN, agent, invoice no…"></div>
+  <div class="table-scroll">
+  <table><thead><tr>
+    <th>Business</th><th>Supplier</th><th>Agent</th><th>Sale Type</th><th>Sale Date</th>
+    <th>Sale Commission</th><th>Received</th><th>Status</th><th>Payment Type</th><th>Days</th><th>Invoice No</th><th></th>
+  </tr></thead><tbody id="records-tbody"></tbody></table>
+  </div>`;
+}
+function recordRowsHtml(recs){
+  if(recs.length===0) return `<tr><td colspan="12"><div class="empty"><b>No matching records</b>Try a different search term.</div></td></tr>`;
+  return recs.map(r=>{
+    const sale = Number(r.saleCommission)||0, recv = Number(r.receivedCommission)||0;
+    const st = commissionStatus(r);
+    const status = st==='received' ? '<span class="pill ok">Received</span>' : st==='overdue' ? '<span class="pill overdue">Overdue</span>' : '<span class="pill pending">Pending</span>';
+    const canEdit = (state.role==='admin' || r.createdBy===state.currentUser) && state.role!=='viewer';
+    return `<tr data-id="${r.id}">
+      <td>${escapeHtml(r.businessName)}</td><td>${escapeHtml(r.supplierName)}</td><td>${escapeHtml(r.agentName)}</td>
+      <td>${escapeHtml(r.saleType)}</td><td>${escapeHtml(r.saleDate)}</td>
+      <td class="mono">${money(sale)}</td><td class="mono">${money(recv)}</td><td>${status}</td>
+      <td>${escapeHtml(r.paymentType)}</td><td>${escapeHtml(r.days)}</td><td>${escapeHtml(r.invoiceNo)}</td>
+      <td>${canEdit ? `<button class="btn btn-sm edit-btn" data-id="${r.id}">Edit</button> <button class="btn btn-sm btn-danger del-btn" data-id="${r.id}">Delete</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+function attachRecordsEvents(){
+  const renderRows = (filterText)=>{
+    let recs = state.records;
+    if(filterText){
+      const q = filterText.toLowerCase();
+      recs = recs.filter(r => ['businessName','mpan','agentName','invoiceNo','supplierName'].some(k=>String(r[k]||'').toLowerCase().includes(q)));
+    }
+    document.getElementById('records-tbody').innerHTML = recordRowsHtml(recs);
+    bindRowButtons();
+  };
+  document.getElementById('rec-search').addEventListener('input', (e)=>renderRows(e.target.value));
+  document.getElementById('export-csv-btn').onclick = exportCsv;
+  renderRows('');
+
+  function bindRowButtons(){
+    document.querySelectorAll('.edit-btn').forEach(b=>{
+      b.onclick = ()=> openEditModal(b.getAttribute('data-id'));
+    });
+    document.querySelectorAll('.del-btn').forEach(b=>{
+      b.onclick = async ()=>{
+        if(!confirm('Delete this record? This cannot be undone.')) return;
+        state.records = state.records.filter(r=>r.id!==b.getAttribute('data-id'));
+        await saveRecords();
+        toast('Record deleted');
+        renderRows(document.getElementById('rec-search').value);
+      };
+    });
+  }
+}
+function openEditModal(id){
+  const rec = state.records.find(r=>r.id===id);
+  if(!rec) return;
+  openModal(`
+    <h3>Edit record</h3>
+    <form id="edit-form">
+      <div class="form-grid">${FIELDS.map(f=>renderFieldInput(f, rec)).join('')}</div>
+      <div class="error-msg" id="edit-error"></div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-teal">Save changes</button>
+        <button type="button" class="btn" id="edit-cancel">Cancel</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('edit-cancel').onclick = closeModal;
+  document.getElementById('edit-form').onsubmit = async (e)=>{
+    e.preventDefault();
+    document.querySelectorAll('#edit-form [data-key]').forEach(el=>{ rec[el.getAttribute('data-key')] = el.value; });
+    rec.updatedAt = new Date().toISOString(); rec.updatedBy = state.currentUser;
+    await saveRecords();
+    closeModal();
+    toast('Record updated');
+    renderView();
+  };
+}
+function exportCsv(){
+  const headers = FIELDS.map(f=>f.label);
+  const rows = state.records.map(r=>FIELDS.map(f=>`"${String(r[f.key]||'').replace(/"/g,'""')}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'commission-records.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ============================= ADMIN ============================= */
+function renderAdmin(){
+  return `
+  <h2 style="font-size:18px; margin-bottom:14px;">Admin control</h2>
+  <div class="card">
+    <h3>Team accounts</h3><p class="desc">Only accounts you create here can sign in and add or change data. Give each teammate their own username and password.</p>
+    <ul class="subtle-list" id="account-list-ul">
+      ${state.accounts.map(a=>`<li>
+        <span><b>${escapeHtml(a.username)}</b> <span class="role-pill ${a.role}" style="margin-left:8px;">${a.role==='admin'?'Admin':a.role==='viewer'?'Viewer':'Data Entry'}</span></span>
+        <span style="display:flex; gap:6px;">
+          <button class="btn btn-sm reset-pw-btn" data-username="${escapeHtml(a.username)}">Reset password</button>
+          ${a.username!==state.currentUser ? `<button class="btn btn-sm btn-danger remove-account-btn" data-username="${escapeHtml(a.username)}">Remove</button>` : ''}
+        </span>
+      </li>`).join('') || '<li>No accounts yet.</li>'}
+    </ul>
+    <h3 style="margin-top:18px; font-size:13.5px;">Create a new account</h3>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr 1fr; align-items:end;">
+      <div class="field"><label>Username</label><input type="text" id="new-acc-username" placeholder="e.g. priya"></div>
+      <div class="field"><label>Password</label><input type="password" id="new-acc-password" placeholder="Set a password"></div>
+      <div class="field"><label>Role</label><select id="new-acc-role"><option value="entry">Data Entry</option><option value="viewer">Viewer (read-only)</option><option value="admin">Admin</option></select></div>
+      <button class="btn btn-teal" id="add-account-btn" style="height:38px;">Create account</button>
+    </div>
+    <p class="error-msg" id="account-error"></p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Overdue threshold</h3><p class="desc">Commission not yet received is marked "Overdue" once it passes this many days (based on the Days field). Currently <b>${state.overdueDays} days</b>.</p>
+      <div class="field"><label>Days before overdue</label><input type="number" id="overdue-days-input" value="${state.overdueDays}"></div>
+      <button class="btn btn-primary" id="save-overdue-btn">Save threshold</button>
+      <p class="hint" id="overdue-status"></p>
+    </div>
+    <div class="card">
+      <h3>All records</h3><p class="desc">Admins can edit or delete any entry from the Records tab.</p>
+      <p class="hint">Total records: ${state.records.length} · Entered by: ${[...new Set(state.records.map(r=>r.createdBy).filter(Boolean))].join(', ') || '—'}</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Backend connection</h3>
+    <p class="desc">This browser is talking to the Google Sheet below. Every save, edit, and delete goes straight into it — there's no separate copy to keep in sync.</p>
+    <div class="field"><label>Web app URL</label><input type="text" id="backend-url-input" value="${escapeHtml(state.sheetUrl)}"></div>
+    <div class="form-actions">
+      <button class="btn btn-primary" id="reconnect-btn">Reconnect</button>
+      <button class="btn" id="refresh-from-admin-btn">Refresh now</button>
+    </div>
+    <p class="hint" id="backend-status">Sharing this tool? Send teammates the same file plus this URL — they paste it once, the first time they open it.</p>
+  </div>`;
+}
+function attachAdminEvents(){
+  document.querySelectorAll('.remove-account-btn').forEach(b=>{
+    b.onclick = async ()=>{
+      const uname = b.getAttribute('data-username');
+      if(!confirm(`Remove account "${uname}"? They will no longer be able to sign in.`)) return;
+      state.accounts = state.accounts.filter(a=>a.username!==uname);
+      await saveAccounts(); renderView();
+    };
+  });
+  document.querySelectorAll('.reset-pw-btn').forEach(b=>{
+    b.onclick = async ()=>{
+      const uname = b.getAttribute('data-username');
+      const newPw = prompt(`Set a new password for "${uname}":`);
+      if(!newPw) return;
+      if(newPw.length < 4){ toast('Password should be at least 4 characters'); return; }
+      const acc = findAccount(uname);
+      acc.salt = randomSalt();
+      acc.hash = await hashPassword(newPw, acc.salt);
+      await saveAccounts();
+      toast(`Password updated for ${uname}`);
+    };
+  });
+  document.getElementById('add-account-btn').onclick = async ()=>{
+    const username = document.getElementById('new-acc-username').value.trim();
+    const pw = document.getElementById('new-acc-password').value;
+    const role = document.getElementById('new-acc-role').value;
+    const err = document.getElementById('account-error');
+    if(!username){ err.textContent = 'Enter a username.'; return; }
+    if(findAccount(username)){ err.textContent = 'That username is already taken.'; return; }
+    if(pw.length < 4){ err.textContent = 'Password should be at least 4 characters.'; return; }
+    const salt = randomSalt();
+    const hash = await hashPassword(pw, salt);
+    state.accounts.push({username, salt, hash, role, createdAt:new Date().toISOString()});
+    await saveAccounts();
+    err.textContent = '';
+    toast(`Account "${username}" created`);
+    renderView();
+  };
+  document.getElementById('save-overdue-btn').onclick = async ()=>{
+    const v = Number(document.getElementById('overdue-days-input').value);
+    if(!v || v<1){ document.getElementById('overdue-status').textContent = 'Enter a valid number of days.'; return; }
+    state.overdueDays = v; await saveOverdueDays();
+    document.getElementById('overdue-status').textContent = 'Threshold updated.';
+    toast('Overdue threshold updated');
+  };
+  document.getElementById('reconnect-btn').onclick = async ()=>{
+    const url = document.getElementById('backend-url-input').value.trim();
+    if(!url){ document.getElementById('backend-status').textContent = 'Paste a Web app URL first.'; return; }
+    setSheetUrl(url);
+    document.getElementById('backend-status').textContent = 'Reconnecting…';
+    const result = await loadAllFromSheet();
+    document.getElementById('backend-status').textContent = result.anyOk ? 'Reconnected.' : 'Could not reach that URL — check the deployment settings.';
+    if(result.anyOk){ toast('Reconnected'); renderView(); }
+  };
+  document.getElementById('refresh-from-admin-btn').onclick = async ()=>{
+    document.getElementById('backend-status').textContent = 'Refreshing…';
+    const result = await loadAllFromSheet();
+    document.getElementById('backend-status').textContent = result.anyOk ? 'Up to date.' : 'Could not reach the Sheet.';
+    if(result.anyOk){ toast('Refreshed'); renderView(); }
+  };
+}
+
+/* ============================= INIT ============================= */
+(async function init(){
+  document.getElementById('app').innerHTML = '<div class="login-wrap"><p class="hint">Loading…</p></div>';
+  await boot();
+})();
+</script>
+</body>
+</html>
