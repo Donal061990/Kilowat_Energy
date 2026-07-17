@@ -5,29 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Commission &amp; Supplier Payment Ledger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#1B2430;
-    --ink-soft:#4A5568;
-    --paper:#F7F8FA;
+    --ink:#101826;
+    --ink-soft:#5B6572;
+    --paper:#F5F6F2;
     --card:#FFFFFF;
-    --line:#E3E7ED;
-    --teal:#2F6F5E;
-    --teal-soft:#E4EFEC;
-    --gold:#B8901F;
-    --gold-soft:#F6EFDC;
-    --rust:#B3541E;
-    --rust-soft:#F7E9E0;
-    --shadow: 0 1px 2px rgba(27,36,48,0.04), 0 4px 16px rgba(27,36,48,0.06);
+    --line:#E1E5E0;
+    --teal:#1F8A5F;
+    --teal-soft:#DDEFE5;
+    --gold:#C97A1A;
+    --gold-soft:#F6E6D0;
+    --rust:#C1442C;
+    --rust-soft:#F6E1DB;
+    --shadow: 0 1px 2px rgba(16,24,38,0.05), 0 6px 20px rgba(16,24,38,0.07);
   }
   *{box-sizing:border-box;}
   body{
     margin:0; background:var(--paper); color:var(--ink);
     font-family:'Inter',sans-serif; font-size:14px; line-height:1.5;
   }
-  h1,h2,h3{font-family:'Fraunces',serif; font-weight:600; margin:0;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; font-weight:600; margin:0; letter-spacing:-0.01em;}
   .mono{font-family:'IBM Plex Mono',monospace;}
   #app{max-width:1280px; margin:0 auto; padding:0 24px 60px;}
 
@@ -39,11 +38,12 @@
   .brand{display:flex; align-items:center; gap:14px;}
   .brand-mark{
     width:40px; height:40px; border-radius:9px; background:var(--ink);
-    display:flex; align-items:center; justify-content:center; color:#fff;
-    font-family:'Fraunces',serif; font-weight:700; font-size:18px;
+    display:flex; align-items:center; justify-content:center; color:var(--gold);
+    box-shadow: inset 0 0 0 1px rgba(201,122,26,0.35);
   }
+  .brand-mark svg{width:20px; height:20px; display:block;}
   .brand h1{font-size:21px; letter-spacing:-0.01em;}
-  .brand p{margin:2px 0 0; color:var(--ink-soft); font-size:12.5px;}
+  .brand p{margin:2px 0 0; color:var(--ink-soft); font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; font-weight:600;}
   .who{display:flex; align-items:center; gap:12px;}
   .who-badge{
     display:flex; flex-direction:column; align-items:flex-end; font-size:12.5px;
@@ -62,6 +62,7 @@
     cursor:pointer; font-family:inherit; transition:.15s;
   }
   .btn:hover{border-color:var(--ink); }
+  .btn:disabled{opacity:.55; cursor:default; pointer-events:none;}
   .btn-primary{background:var(--ink); color:#fff; border-color:var(--ink);}
   .btn-primary:hover{background:#0f1620;}
   .btn-teal{background:var(--teal); color:#fff; border-color:var(--teal);}
@@ -96,24 +97,29 @@
   /* ---------- Nav ---------- */
   .nav{display:flex; gap:6px; margin-bottom:24px; border-bottom:1px solid var(--line);}
   .nav button{
-    border:none; background:transparent; padding:10px 4px; margin-right:22px; font-family:inherit;
-    font-weight:600; font-size:13.5px; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent;
+    border:none; background:transparent; padding:10px 2px; margin-right:26px; font-family:'Space Grotesk',sans-serif;
+    font-weight:600; font-size:13px; letter-spacing:.02em; color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent;
+    transition:color .15s;
   }
-  .nav button.active{color:var(--ink); border-bottom-color:var(--teal);}
+  .nav button:hover{color:var(--ink);}
+  .nav button.active{color:var(--ink); border-bottom-color:var(--gold);}
   .view{display:none;}
   .view.active{display:block;}
 
-  /* ---------- KPI ticker ---------- */
+  /* ---------- KPI ticker (meter readout) ---------- */
   .ticker{
-    display:flex; background:var(--ink); border-radius:12px; padding:20px 22px; margin-bottom:24px;
-    gap:0; overflow-x:auto;
+    display:flex; background:var(--ink); border-radius:10px; padding:22px 22px 20px; margin-bottom:24px;
+    gap:0; overflow-x:auto; position:relative;
+    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 28px);
   }
-  .kpi{flex:1; min-width:150px; padding:0 22px; border-right:1px solid rgba(255,255,255,0.12); color:#fff;}
+  .kpi{flex:1; min-width:150px; padding:0 22px; border-right:1px solid rgba(255,255,255,0.10); color:#fff;}
   .kpi:last-child{border-right:none;}
-  .kpi span{display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#A9B2C0; margin-bottom:6px;}
-  .kpi b{font-family:'IBM Plex Mono',monospace; font-size:21px; font-weight:600;}
-  .kpi b.gold{color:#E9C766;}
-  .kpi b.rust{color:#E39468;}
+  .kpi span{display:flex; align-items:center; gap:6px; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:#8B94A3; margin-bottom:8px; font-weight:600;}
+  .kpi span::before{content:''; width:5px; height:5px; border-radius:50%; background:#3A4454; display:inline-block; flex-shrink:0;}
+  .kpi b{font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-0.01em;}
+  .kpi b.gold{color:#E8A94E; text-shadow:0 0 14px rgba(232,169,78,0.35);}
+  .kpi b.rust{color:#E17A5F; text-shadow:0 0 14px rgba(225,122,95,0.3);}
+  .kpi.live span::before{background:#E8A94E; box-shadow:0 0 6px rgba(232,169,78,0.8);}
 
   /* ---------- Filters ---------- */
   .filters{
@@ -125,8 +131,10 @@
 
   /* ---------- Cards / grid ---------- */
   .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px;}
-  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px;}
-  .card h3{font-size:14.5px; margin-bottom:2px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 20px;}
+  #dashboard-dynamic{transition: opacity .18s ease;}
+  #dashboard-dynamic.refreshing{opacity:.45;}
+  .card h3{font-size:14px; margin-bottom:2px; letter-spacing:.01em;}
   .card p.desc{color:var(--ink-soft); font-size:12px; margin:0 0 12px;}
   .chart-box{position:relative; height:260px;}
 
@@ -140,12 +148,16 @@
   td{padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap;}
   tr:hover td{background:#FAFBFC;}
   .table-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:12px; max-height:520px; overflow-y:auto;}
-  .pill{padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600;}
+  .pill{padding:3px 9px 3px 7px; border-radius:99px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:5px;}
+  .pill::before{content:''; width:6px; height:6px; border-radius:50%; display:inline-block; flex-shrink:0;}
   .pill.ok{background:var(--teal-soft); color:var(--teal);}
+  .pill.ok::before{background:var(--teal);}
   .pill.pending{background:var(--gold-soft); color:var(--gold);}
+  .pill.pending::before{background:var(--gold);}
   .pill.overdue{background:var(--rust-soft); color:var(--rust);}
+  .pill.overdue::before{background:var(--rust);}
   .empty{padding:40px 20px; text-align:center; color:var(--ink-soft);}
-  .empty b{display:block; color:var(--ink); font-size:15px; margin-bottom:4px; font-family:'Fraunces',serif;}
+  .empty b{display:block; color:var(--ink); font-size:15px; margin-bottom:4px; font-family:'Space Grotesk',sans-serif;}
 
   /* ---------- Form ---------- */
   .form-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px 18px;}
@@ -194,36 +206,45 @@
 <script>
 /* ============================= CONFIG ============================= */
 const FIELDS = [
-  {key:'businessName', label:'Business Name', type:'text', required:true, col:1},
-  {key:'mpan', label:'MPAN', type:'text', col:1},
-  {key:'mrn', label:'MRN', type:'text', col:1},
-  {key:'spoid', label:'SPOID', type:'text', col:1},
-  {key:'saleType', label:'Sale Type', type:'select', options:['New','Renewal','Switch','Additional'], col:1},
-  {key:'supplierName', label:'Supplier Name', type:'text', required:true, col:1},
-  {key:'saleConsumption', label:'Sale Consumption', type:'number', col:1},
-  {key:'onSupplyConsumption', label:'On Supply Consumption', type:'number', col:1},
-  {key:'saleDate', label:'Sale Date', type:'date', col:1},
-  {key:'contractStartDate', label:'Contract Start Date', type:'date', col:1},
-  {key:'duration', label:'Duration (months)', type:'number', col:1},
-  {key:'renewalDate', label:'Renewal Date', type:'date', col:1},
-  {key:'invoiceNo', label:'Invoice No', type:'text', col:1},
-  {key:'invoiceDate', label:'Invoice Date', type:'date', col:1},
-  {key:'saleCommission', label:'Sale Commission (£)', type:'number', col:1},
-  {key:'liveDate', label:'Live Date', type:'date', col:1},
-  {key:'agentName', label:'Agent Name', type:'text', required:true, col:1},
-  {key:'percentage', label:'Percentage (%)', type:'number', col:1},
-  {key:'receivedCommission', label:'Received Commission (£)', type:'number', col:1},
-  {key:'paymentType', label:'Payment Type', type:'select', options:['Bank Transfer','Cheque','Cash','Adjustment','Other'], col:1},
-  {key:'days', label:'Days', type:'number', col:1},
+  {key:'businessName', label:'Business Name', type:'text', required:true},
+  {key:'mpan', label:'MPAN', type:'text'},
+  {key:'mrn', label:'MRN', type:'text'},
+  {key:'spoid', label:'SPOID', type:'text'},
+  {key:'saleType', label:'Sale Type', type:'select', options:['New','Renewal','Switch','Additional']},
+  {key:'acqRenewal', label:'Acq/Renewal', type:'select', options:['Acquisition','Renewal']},
+  {key:'supplierName', label:'Supplier Name', type:'text', required:true},
+  {key:'saleConsumption', label:'Sale Consumption', type:'number'},
+  {key:'onSupplyConsumption', label:'On Supply Consumption', type:'number'},
+  {key:'saleDate', label:'Sale Date', type:'date'},
+  {key:'contractStartDate', label:'Contract Start Date', type:'date'},
+  {key:'term', label:'Term', type:'number'},
+  {key:'duration', label:'Duration (months)', type:'number'},
+  {key:'renewalDate', label:'Renewal Date', type:'date'},
+  {key:'invoiceNo', label:'Invoice No', type:'text'},
+  {key:'invoiceDate', label:'Invoice Date', type:'date'},
+  {key:'saleCommission', label:'Sale Commission (£)', type:'number'},
+  {key:'receivedCommission', label:'Received Commission (£)', type:'number'},
+  {key:'liveDate', label:'Live Date', type:'date'},
+  {key:'agentName', label:'Agent Name', type:'text', required:true},
+  {key:'percentage', label:'Percentage (%)', type:'number'},
+  {key:'paymentType', label:'Payment Type', type:'select', options:['Bank Transfer','Cheque','Cash','Adjustment','Other']},
+  {key:'paymentDaysCriteria', label:'Payment Days Criteria', type:'number'},
+  {key:'paymentDate', label:'Payment Date', type:'date'},
+  {key:'saleStatus', label:'Sale Status', type:'text'},
+  {key:'remark', label:'Remark', type:'textarea'},
 ];
+// Fields below are calculated automatically and are NOT part of the entry form:
+// month (from Sale Date), difference (Sale − Received), paymentMonth/paymentYear (from Payment Date), ageing (live, from Invoice Date)
 const HEADER_ALIASES = {
   'businessname':'businessName','mpan':'mpan','mrn':'mrn','spoid':'spoid','saletype':'saleType',
+  'acqrenewal':'acqRenewal','acq/renewal':'acqRenewal',
   'suppliername':'supplierName','saleconsumption':'saleConsumption','onsupplyconsumption':'onSupplyConsumption',
-  'saledate':'saleDate','contractstartdate':'contractStartDate','duration':'duration','renewaldate':'renewalDate',
+  'saledate':'saleDate','contractstartdate':'contractStartDate','term':'term','duration':'duration','renewaldate':'renewalDate',
   'invoiceno':'invoiceNo','invoicedate':'invoiceDate','salecommision':'saleCommission','salecommission':'saleCommission',
   'livedate':'liveDate','agentname':'agentName','percentage':'percentage',
   'receievedcommision':'receivedCommission','receivedcommision':'receivedCommission','receivedcommission':'receivedCommission',
-  'paymenttype':'paymentType','days':'days'
+  'paymenttype':'paymentType','paymentdayscriteria':'paymentDaysCriteria','paymentdate':'paymentDate',
+  'salestatus':'saleStatus','remark':'remark','remarks':'remark'
 };
 /* ============================= BACKEND CONFIG ============================= */
 // Optional: paste your Apps Script Web app URL here before sharing this file.
@@ -247,7 +268,13 @@ let state = {
 
 /* ============================= HELPERS ============================= */
 function uid(){ return 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
-function money(n){ n = Number(n)||0; return '£' + n.toLocaleString(undefined,{minimumFractionDigits:0, maximumFractionDigits:2}); }
+function parseNum(v){
+  if(v===null || v===undefined || v==='') return 0;
+  const cleaned = String(v).replace(/[^0-9.\-]/g,'');
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+function money(n){ n = parseNum(n); return '£' + n.toLocaleString(undefined,{minimumFractionDigits:0, maximumFractionDigits:2}); }
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -257,12 +284,39 @@ function toast(msg){
 function norm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function monthKey(d){ if(!d) return null; const dt = new Date(d); if(isNaN(dt)) return null; return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'); }
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function formatMonthYear(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr);
+  if(isNaN(d)) return '';
+  return MONTH_NAMES[d.getMonth()] + '-' + d.getFullYear();
+}
+// Ageing is always calculated live (days since Invoice Date) — never stored, so it's never stale.
+function computeAgeing(r){
+  if(!r.invoiceDate) return null;
+  const d = new Date(r.invoiceDate);
+  if(isNaN(d)) return null;
+  return Math.floor((Date.now() - d.getTime()) / (1000*60*60*24));
+}
 function commissionStatus(r){
   const sale = Number(r.saleCommission)||0, recv = Number(r.receivedCommission)||0;
   if(sale>0 && recv>=sale) return 'received';
-  const days = Number(r.days)||0;
-  if(days > state.overdueDays) return 'overdue';
+  const ageing = computeAgeing(r);
+  const threshold = Number(r.paymentDaysCriteria) || state.overdueDays;
+  if(ageing!=null && ageing > threshold) return 'overdue';
   return 'pending';
+}
+// Fills in the calculated columns (Month, Difference, Payment Month/Year) right before a record is saved.
+function deriveComputedFields(rec){
+  rec.month = formatMonthYear(rec.saleDate);
+  const sale = Number(rec.saleCommission)||0, recv = Number(rec.receivedCommission)||0;
+  rec.difference = (sale - recv).toFixed(2);
+  if(rec.paymentDate){
+    const d = new Date(rec.paymentDate);
+    if(!isNaN(d)){ rec.paymentMonth = MONTH_NAMES[d.getMonth()]; rec.paymentYear = String(d.getFullYear()); }
+    else { rec.paymentMonth=''; rec.paymentYear=''; }
+  } else { rec.paymentMonth=''; rec.paymentYear=''; }
+  return rec;
 }
 function randomSalt(){ return Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b=>b.toString(16).padStart(2,'0')).join(''); }
 async function hashPassword(password, salt){
@@ -341,13 +395,19 @@ async function boot(){
   app.innerHTML = '<div class="login-wrap"><p class="hint">Connecting to your Google Sheet…</p></div>';
   const result = await loadAllFromSheet();
   if(!result.anyOk){ app.innerHTML = renderConnect(true); attachConnectEvents(); return; }
+  const rememberedUser = localStorage.getItem('commission_session_user');
+  if(rememberedUser){
+    const account = findAccount(rememberedUser);
+    if(account){ state.role = account.role; state.currentUser = account.username; state.currentView = 'dashboard'; }
+    else { localStorage.removeItem('commission_session_user'); }
+  }
   render();
 }
 function renderConnect(failed){
   return `
   <div class="login-wrap">
     <div class="brand" style="margin-bottom:22px;">
-      <div class="brand-mark">£</div>
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor"/></svg></div>
       <div><h1>Commission Ledger</h1><p>Supplier &amp; agent commission tracker</p></div>
     </div>
     <h2 style="font-size:20px;">Connect to your Google Sheet</h2>
@@ -384,7 +444,7 @@ function renderBootstrap(){
   return `
   <div class="login-wrap">
     <div class="brand" style="margin-bottom:22px;">
-      <div class="brand-mark">£</div>
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor"/></svg></div>
       <div><h1>Commission Ledger</h1><p>Supplier &amp; agent commission tracker</p></div>
     </div>
     <h2>Set up your admin account</h2>
@@ -411,6 +471,7 @@ function attachBootstrapEvents(){
     state.accounts.push({username, salt, hash, role:'admin', createdAt:new Date().toISOString()});
     await saveAccounts();
     state.role='admin'; state.currentUser=username; state.currentView='dashboard';
+    localStorage.setItem('commission_session_user', username);
     toast('Admin account created');
     render();
   };
@@ -421,7 +482,7 @@ function renderLogin(){
   return `
   <div class="login-wrap">
     <div class="brand" style="margin-bottom:22px;">
-      <div class="brand-mark">£</div>
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor"/></svg></div>
       <div><h1>Commission Ledger</h1><p>Supplier &amp; agent commission tracker</p></div>
     </div>
     <h2 style="font-size:20px;">Sign in</h2>
@@ -442,6 +503,7 @@ function attachLoginEvents(){
     const hash = await hashPassword(pw, account.salt);
     if(hash !== account.hash){ err.textContent='Incorrect password.'; return; }
     state.role = account.role; state.currentUser = account.username; state.currentView='dashboard';
+    localStorage.setItem('commission_session_user', account.username);
     render();
   };
   document.getElementById('login-btn').onclick = doLogin;
@@ -453,7 +515,7 @@ function renderShell(){
   return `
   <div class="topbar">
     <div class="brand">
-      <div class="brand-mark">£</div>
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor"/></svg></div>
       <div><h1>Commission Ledger</h1><p>Supplier &amp; agent commission tracker</p></div>
     </div>
     <div class="who">
@@ -473,14 +535,15 @@ function renderShell(){
   `;
 }
 function attachShellEvents(){
-  document.getElementById('refresh-btn').onclick = async ()=>{
-    toast('Refreshing from Sheet…');
+  document.getElementById('refresh-btn').onclick = async (e)=>{
+    const btn = e.currentTarget;
+    btn.disabled = true; const original = btn.textContent; btn.textContent = 'Refreshing…';
     const result = await loadAllFromSheet();
-    if(!result.anyOk){ toast('Could not reach the Sheet'); return; }
+    if(!result.anyOk){ toast('Could not reach the Sheet'); btn.disabled = false; btn.textContent = original; return; }
     toast('Up to date');
     render();
   };
-  document.getElementById('logout-btn').onclick = ()=>{ state.role=null; state.currentUser=null; render(); };
+  document.getElementById('logout-btn').onclick = ()=>{ state.role=null; state.currentUser=null; localStorage.removeItem('commission_session_user'); render(); };
   document.querySelectorAll('.nav button[data-view]').forEach(b=>{
     b.onclick = ()=>{ state.currentView = b.getAttribute('data-view'); render(); };
   });
@@ -556,10 +619,13 @@ function attachFilterEvents(onChange){
 
 /* ============================= DASHBOARD ============================= */
 function renderDashboard(){
-  const recs = getFilteredRecords();
   if(state.records.length===0){
     return `${renderFilterBar()}<div class="card"><div class="empty"><b>No records yet</b>Head to Data Entry to log your first sale — the dashboard fills in automatically.</div></div>`;
   }
+  return `${renderFilterBar()}<div id="dashboard-dynamic">${renderDashboardDynamic()}</div>`;
+}
+function renderDashboardDynamic(){
+  const recs = getFilteredRecords();
   const totalSale = recs.reduce((s,r)=>s+(Number(r.saleCommission)||0),0);
   const totalReceived = recs.reduce((s,r)=>s+(Number(r.receivedCommission)||0),0);
   let pendingAmt=0, overdueAmt=0;
@@ -571,13 +637,12 @@ function renderDashboard(){
   const receivedPct = totalSale ? Math.round((totalReceived/totalSale)*100) : 0;
 
   return `
-  ${renderFilterBar()}
   <div class="ticker">
     <div class="kpi"><span>Total Sales Logged</span><b>${recs.length}</b></div>
     <div class="kpi"><span>Total Sale Commission</span><b>${money(totalSale)}</b></div>
     <div class="kpi"><span>Received Commission</span><b class="gold">${money(totalReceived)}</b></div>
     <div class="kpi"><span>Pending (within ${state.overdueDays}d)</span><b>${money(pendingAmt)}</b></div>
-    <div class="kpi"><span>Overdue (${state.overdueDays}d+)</span><b class="rust">${money(overdueAmt)}</b></div>
+    <div class="kpi live"><span>Overdue (${state.overdueDays}d+)</span><b class="rust">${money(overdueAmt)}</b></div>
     <div class="kpi"><span>Received Rate</span><b>${receivedPct}%</b></div>
   </div>
 
@@ -595,12 +660,24 @@ function renderDashboard(){
   </div>
   <div class="grid-2">
     <div class="card"><h3>Payment Type Mix</h3><p class="desc">Received commission by payment method</p><div class="chart-box"><canvas id="chart-paytype"></canvas></div></div>
+    <div class="card"><h3>Acq/Renewal Mix</h3><p class="desc">Count of sales, acquisition vs renewal</p><div class="chart-box"><canvas id="chart-acqrenewal"></canvas></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3>Sale Status Mix</h3><p class="desc">Count of sales by status</p><div class="chart-box"><canvas id="chart-salestatus"></canvas></div></div>
   </div>
   <div class="card">
     <h3>Renewals Due (next 60 days)</h3><p class="desc">Contracts approaching renewal</p>
     ${renderRenewalsTable(recs)}
   </div>
   `;
+}
+async function updateDashboardDynamic(){
+  const el = document.getElementById('dashboard-dynamic');
+  if(!el) return;
+  el.classList.add('refreshing');
+  el.innerHTML = renderDashboardDynamic();
+  await buildCharts();
+  el.classList.remove('refreshing');
 }
 function renderRenewalsTable(recs){
   const today = new Date();
@@ -617,14 +694,40 @@ function renderRenewalsTable(recs){
 }
 function attachDashboardEvents(){
   if(state.records.length===0) { attachFilterEvents(()=>{ renderView(); }); return; }
-  attachFilterEvents(()=>{ renderView(); });
+  attachFilterEvents(()=>{ updateDashboardDynamic(); });
 }
 function destroyCharts(){ Object.values(state.charts).forEach(c=>{ try{c.destroy();}catch(e){} }); state.charts = {}; }
-function buildCharts(){
+function ensureChartJsLoaded(){
+  if(window.Chart) return Promise.resolve(true);
+  if(window._chartLoadPromise) return window._chartLoadPromise;
+  const urls = [
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js',
+    'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.min.js'
+  ];
+  window._chartLoadPromise = new Promise((resolve)=>{
+    let i = 0;
+    function tryNext(){
+      if(window.Chart){ resolve(true); return; }
+      if(i>=urls.length){ resolve(false); return; }
+      const s = document.createElement('script');
+      s.src = urls[i++];
+      s.onload = ()=> resolve(!!window.Chart);
+      s.onerror = tryNext;
+      document.head.appendChild(s);
+    }
+    tryNext();
+  });
+  return window._chartLoadPromise;
+}
+async function buildCharts(){
+  const loaded = await ensureChartJsLoaded();
+  if(!loaded){ toast('Could not load the chart library — check your internet connection and try Refresh'); return; }
+  if(state.currentView!=='dashboard') return;
   destroyCharts();
   if(state.records.length===0) return;
   const recs = getFilteredRecords();
-  const palette = ['#2F6F5E','#B8901F','#B3541E','#4A5568','#6E9B8C','#D9B14F','#8C4A2E','#1B2430'];
+  const palette = ['#1F8A5F','#C97A1A','#C1442C','#5B6572','#6FB090','#E0A94E','#8B4A32','#101826'];
 
   // Status: received / pending / overdue
   const statusTotals = {received:0, pending:0, overdue:0};
@@ -638,7 +741,7 @@ function buildCharts(){
   });
   state.charts.status = new Chart(document.getElementById('chart-status'), {
     type:'doughnut',
-    data:{labels:['Received','Pending','Overdue'], datasets:[{data:[statusTotals.received, statusTotals.pending, statusTotals.overdue], backgroundColor:['#2F6F5E','#B8901F','#B3541E']}]},
+    data:{labels:['Received','Pending','Overdue'], datasets:[{data:[statusTotals.received, statusTotals.pending, statusTotals.overdue], backgroundColor:['#1F8A5F','#C97A1A','#C1442C']}]},
     options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
   });
 
@@ -647,7 +750,7 @@ function buildCharts(){
   recs.forEach(r=>{ const k=r.supplierName||'Unspecified'; bySupplier[k]=(bySupplier[k]||0)+(Number(r.saleCommission)||0); });
   const supTop = Object.entries(bySupplier).sort((a,b)=>b[1]-a[1]).slice(0,8);
   state.charts.supplier = new Chart(document.getElementById('chart-supplier'), {
-    type:'bar', data:{labels:supTop.map(x=>x[0]), datasets:[{label:'Sale Commission', data:supTop.map(x=>x[1]), backgroundColor:'#2F6F5E', borderRadius:5}]},
+    type:'bar', data:{labels:supTop.map(x=>x[0]), datasets:[{label:'Sale Commission', data:supTop.map(x=>x[1]), backgroundColor:'#1F8A5F', borderRadius:5}]},
     options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}, responsive:true, maintainAspectRatio:false}
   });
 
@@ -656,7 +759,7 @@ function buildCharts(){
   recs.forEach(r=>{ const k=r.agentName||'Unassigned'; byAgent[k]=(byAgent[k]||0)+(Number(r.saleCommission)||0); });
   const agTop = Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).slice(0,8);
   state.charts.agent = new Chart(document.getElementById('chart-agent'), {
-    type:'bar', data:{labels:agTop.map(x=>x[0]), datasets:[{label:'Sale Commission', data:agTop.map(x=>x[1]), backgroundColor:'#B8901F', borderRadius:5}]},
+    type:'bar', data:{labels:agTop.map(x=>x[0]), datasets:[{label:'Sale Commission', data:agTop.map(x=>x[1]), backgroundColor:'#C97A1A', borderRadius:5}]},
     options:{indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}}, responsive:true, maintainAspectRatio:false}
   });
 
@@ -666,8 +769,8 @@ function buildCharts(){
   const months = Object.keys(trend).sort();
   state.charts.trend = new Chart(document.getElementById('chart-trend'), {
     type:'line', data:{labels:months, datasets:[
-      {label:'Sale Commission', data:months.map(m=>trend[m].sale), borderColor:'#1B2430', backgroundColor:'transparent', tension:.3},
-      {label:'Received Commission', data:months.map(m=>trend[m].recv), borderColor:'#2F6F5E', backgroundColor:'transparent', tension:.3}
+      {label:'Sale Commission', data:months.map(m=>trend[m].sale), borderColor:'#101826', backgroundColor:'transparent', tension:.3},
+      {label:'Received Commission', data:months.map(m=>trend[m].recv), borderColor:'#1F8A5F', backgroundColor:'transparent', tension:.3}
     ]}, options:{responsive:true, maintainAspectRatio:false}
   });
 
@@ -676,11 +779,11 @@ function buildCharts(){
   recs.forEach(r=>{
     const outstanding = (Number(r.saleCommission)||0) - (Number(r.receivedCommission)||0);
     if(outstanding<=0) return;
-    const d = Number(r.days)||0;
+    const d = computeAgeing(r) || 0;
     if(d<=30) buckets['0-30']+=outstanding; else if(d<=60) buckets['31-60']+=outstanding; else if(d<=90) buckets['61-90']+=outstanding; else buckets['90+']+=outstanding;
   });
   state.charts.aging = new Chart(document.getElementById('chart-aging'), {
-    type:'bar', data:{labels:Object.keys(buckets), datasets:[{label:'Outstanding', data:Object.values(buckets), backgroundColor:'#B3541E', borderRadius:5}]},
+    type:'bar', data:{labels:Object.keys(buckets), datasets:[{label:'Outstanding', data:Object.values(buckets), backgroundColor:'#C1442C', borderRadius:5}]},
     options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}, responsive:true, maintainAspectRatio:false}
   });
 
@@ -697,6 +800,22 @@ function buildCharts(){
   recs.forEach(r=>{ const k=r.paymentType||'Unspecified'; byPay[k]=(byPay[k]||0)+(Number(r.receivedCommission)||0); });
   state.charts.paytype = new Chart(document.getElementById('chart-paytype'), {
     type:'doughnut', data:{labels:Object.keys(byPay), datasets:[{data:Object.values(byPay), backgroundColor:palette}]},
+    options:{responsive:true, maintainAspectRatio:false}
+  });
+
+  // Acq/Renewal mix
+  const byAcqRenewal = {};
+  recs.forEach(r=>{ const k=r.acqRenewal||'Unspecified'; byAcqRenewal[k]=(byAcqRenewal[k]||0)+1; });
+  state.charts.acqrenewal = new Chart(document.getElementById('chart-acqrenewal'), {
+    type:'doughnut', data:{labels:Object.keys(byAcqRenewal), datasets:[{data:Object.values(byAcqRenewal), backgroundColor:palette}]},
+    options:{responsive:true, maintainAspectRatio:false}
+  });
+
+  // Sale Status mix
+  const bySaleStatus = {};
+  recs.forEach(r=>{ const k=r.saleStatus||'Unspecified'; bySaleStatus[k]=(bySaleStatus[k]||0)+1; });
+  state.charts.salestatus = new Chart(document.getElementById('chart-salestatus'), {
+    type:'doughnut', data:{labels:Object.keys(bySaleStatus), datasets:[{data:Object.values(bySaleStatus), backgroundColor:palette}]},
     options:{responsive:true, maintainAspectRatio:false}
   });
 }
@@ -734,6 +853,10 @@ function renderFieldInput(f, vals){
     return `<div class="field"><label>${f.label}${f.required?' *':''}</label>
     <select data-key="${f.key}"><option value="">Select…</option>${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
   }
+  if(f.type==='textarea'){
+    return `<div class="field" style="grid-column: span 3;"><label>${f.label}${f.required?' *':''}</label>
+    <textarea data-key="${f.key}" rows="2">${escapeHtml(val)}</textarea></div>`;
+  }
   if(f.key==='agentName' || f.key==='supplierName'){
     const suggestions = [...new Set(state.records.map(r=>r[f.key]).filter(Boolean))];
     return `<div class="field"><label>${f.label}${f.required?' *':''}</label>
@@ -766,11 +889,20 @@ function attachEntryEvents(){
     document.querySelectorAll('#entry-form [data-key]').forEach(el=>{ rec[el.getAttribute('data-key')] = el.value; });
     const missing = FIELDS.filter(f=>f.required && !rec[f.key]);
     if(missing.length){ document.getElementById('entry-error').textContent = 'Please fill: '+missing.map(f=>f.label).join(', '); return; }
+    deriveComputedFields(rec);
     state.records.push(rec);
+    const btn = e.target.querySelector('button[type="submit"]');
+    if(btn){ btn.disabled = true; btn.textContent = 'Saving…'; }
     await saveRecords();
     toast('Record saved');
     renderView();
   };
+}
+const NUMERIC_FIELDS = ['saleConsumption','onSupplyConsumption','term','duration','saleCommission','receivedCommission','percentage','paymentDaysCriteria'];
+function cleanNumeric(v){
+  if(v==null || v==='' || v==='-') return '';
+  const cleaned = String(v).replace(/[^0-9.\-]/g,'');
+  return cleaned;
 }
 function parseBulk(raw){
   const lines = raw.split(/\r?\n/).filter(l=>l.trim().length);
@@ -784,7 +916,13 @@ function parseBulk(raw){
     const cells = lines[i].split(delim);
     if(cells.every(c=>!c.trim())) continue;
     const rec = { id: uid(), createdBy: state.currentUser, createdAt: new Date().toISOString() };
-    mapped.forEach((key,idx)=>{ if(key) rec[key] = (cells[idx]||'').trim(); });
+    mapped.forEach((key,idx)=>{
+      if(!key) return;
+      let val = (cells[idx]||'').trim();
+      if(NUMERIC_FIELDS.includes(key)) val = cleanNumeric(val);
+      rec[key] = val;
+    });
+    deriveComputedFields(rec);
     records.push(rec);
   }
   return {records};
@@ -801,23 +939,28 @@ function renderRecords(){
   <div class="searchbar"><input type="text" id="rec-search" placeholder="Search by business, MPAN, agent, invoice no…"></div>
   <div class="table-scroll">
   <table><thead><tr>
-    <th>Business</th><th>Supplier</th><th>Agent</th><th>Sale Type</th><th>Sale Date</th>
-    <th>Sale Commission</th><th>Received</th><th>Status</th><th>Payment Type</th><th>Days</th><th>Invoice No</th><th></th>
+    <th>Business</th><th>Supplier</th><th>Agent</th><th>Sale Type</th><th>Acq/Renewal</th><th>Sale Date</th><th>Month</th>
+    <th>Sale Commission</th><th>Received</th><th>Difference</th><th>Status</th><th>Ageing</th>
+    <th>Payment Type</th><th>Payment Date</th><th>Sale Status</th><th>Invoice No</th><th>Remark</th><th></th>
   </tr></thead><tbody id="records-tbody"></tbody></table>
   </div>`;
 }
 function recordRowsHtml(recs){
-  if(recs.length===0) return `<tr><td colspan="12"><div class="empty"><b>No matching records</b>Try a different search term.</div></td></tr>`;
+  if(recs.length===0) return `<tr><td colspan="17"><div class="empty"><b>No matching records</b>Try a different search term.</div></td></tr>`;
   return recs.map(r=>{
     const sale = Number(r.saleCommission)||0, recv = Number(r.receivedCommission)||0;
+    const diff = Number(r.difference !== undefined ? r.difference : (sale-recv));
+    const ageing = computeAgeing(r);
     const st = commissionStatus(r);
     const status = st==='received' ? '<span class="pill ok">Received</span>' : st==='overdue' ? '<span class="pill overdue">Overdue</span>' : '<span class="pill pending">Pending</span>';
     const canEdit = (state.role==='admin' || r.createdBy===state.currentUser) && state.role!=='viewer';
     return `<tr data-id="${r.id}">
       <td>${escapeHtml(r.businessName)}</td><td>${escapeHtml(r.supplierName)}</td><td>${escapeHtml(r.agentName)}</td>
-      <td>${escapeHtml(r.saleType)}</td><td>${escapeHtml(r.saleDate)}</td>
-      <td class="mono">${money(sale)}</td><td class="mono">${money(recv)}</td><td>${status}</td>
-      <td>${escapeHtml(r.paymentType)}</td><td>${escapeHtml(r.days)}</td><td>${escapeHtml(r.invoiceNo)}</td>
+      <td>${escapeHtml(r.saleType)}</td><td>${escapeHtml(r.acqRenewal)}</td><td>${escapeHtml(r.saleDate)}</td><td>${escapeHtml(r.month)}</td>
+      <td class="mono">${money(sale)}</td><td class="mono">${money(recv)}</td><td class="mono">${money(diff)}</td>
+      <td>${status}</td><td>${ageing==null?'—':ageing+'d'}</td>
+      <td>${escapeHtml(r.paymentType)}</td><td>${escapeHtml(r.paymentDate)}</td><td>${escapeHtml(r.saleStatus)}</td>
+      <td>${escapeHtml(r.invoiceNo)}</td><td>${escapeHtml(r.remark)}</td>
       <td>${canEdit ? `<button class="btn btn-sm edit-btn" data-id="${r.id}">Edit</button> <button class="btn btn-sm btn-danger del-btn" data-id="${r.id}">Delete</button>` : ''}</td>
     </tr>`;
   }).join('');
@@ -869,6 +1012,7 @@ function openEditModal(id){
   document.getElementById('edit-form').onsubmit = async (e)=>{
     e.preventDefault();
     document.querySelectorAll('#edit-form [data-key]').forEach(el=>{ rec[el.getAttribute('data-key')] = el.value; });
+    deriveComputedFields(rec);
     rec.updatedAt = new Date().toISOString(); rec.updatedBy = state.currentUser;
     await saveRecords();
     closeModal();
@@ -877,8 +1021,20 @@ function openEditModal(id){
   };
 }
 function exportCsv(){
-  const headers = FIELDS.map(f=>f.label);
-  const rows = state.records.map(r=>FIELDS.map(f=>`"${String(r[f.key]||'').replace(/"/g,'""')}"`).join(','));
+  const extra = [
+    {key:'month', label:'Month'},
+    {key:'difference', label:'Difference'},
+    {key:'paymentMonth', label:'Payment Month'},
+    {key:'paymentYear', label:'Payment Year'}
+  ];
+  const cols = [...FIELDS, ...extra];
+  const headers = [...cols.map(f=>f.label), 'Ageing'];
+  const rows = state.records.map(r=>{
+    const cells = cols.map(f=>`"${String(r[f.key]||'').replace(/"/g,'""')}"`);
+    const ageing = computeAgeing(r);
+    cells.push(`"${ageing==null?'':ageing}"`);
+    return cells.join(',');
+  });
   const csv = [headers.join(','), ...rows].join('\n');
   const blob = new Blob([csv], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
