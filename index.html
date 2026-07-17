@@ -250,12 +250,15 @@ const HEADER_ALIASES = {
 // Optional: paste your Apps Script Web app URL here before sharing this file.
 // If set, anyone opening this file connects automatically — no setup screen for them.
 const DEFAULT_SHEET_URL = '';
+// Must match the API_KEY set in your Apps Script's Code.gs.
+const DEFAULT_ACCESS_KEY = '';
 
 const DEFAULT_OVERDUE_DAYS = 60;
 
 /* ============================= STATE ============================= */
 let state = {
   sheetUrl: localStorage.getItem('commission_sheet_url') || DEFAULT_SHEET_URL || '',
+  accessKey: localStorage.getItem('commission_access_key') || DEFAULT_ACCESS_KEY || '',
   records: [],
   accounts: [],
   overdueDays: DEFAULT_OVERDUE_DAYS,
@@ -341,7 +344,7 @@ function sheetGet(type){
     window[cbName] = (data)=>{ if(done) return; done=true; clearTimeout(timer); cleanup(); resolve(data); };
     script.onerror = ()=>{ if(done) return; done=true; clearTimeout(timer); cleanup(); resolve(null); };
     const sep = state.sheetUrl.includes('?') ? '&' : '?';
-    script.src = state.sheetUrl + sep + 'type=' + type + '&callback=' + cbName + '&_=' + Date.now();
+    script.src = state.sheetUrl + sep + 'type=' + type + '&key=' + encodeURIComponent(state.accessKey) + '&callback=' + cbName + '&_=' + Date.now();
     document.body.appendChild(script);
   });
 }
@@ -352,7 +355,7 @@ async function sheetSet(type, extra){
       method:'POST',
       mode:'no-cors',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify(Object.assign({type: type}, extra))
+      body: JSON.stringify(Object.assign({type: type, key: state.accessKey}, extra))
     });
     return true;
   }catch(e){ return false; }
@@ -361,12 +364,13 @@ async function loadAllFromSheet(){
   const [recData, accData, setData] = await Promise.all([
     sheetGet('records'), sheetGet('accounts'), sheetGet('settings')
   ]);
-  const recOk = !!recData, accOk = !!accData, setOk = !!setData;
+  const unauthorized = [recData, accData, setData].some(d => d && d.error === 'unauthorized');
+  const recOk = !!recData && !recData.error, accOk = !!accData && !accData.error, setOk = !!setData && !setData.error;
   state.records = (recData && Array.isArray(recData.records)) ? recData.records : [];
   state.accounts = (accData && Array.isArray(accData.accounts)) ? accData.accounts : [];
   const settings = (setData && setData.settings) ? setData.settings : {};
   state.overdueDays = settings.overdueDays ? Number(settings.overdueDays) : DEFAULT_OVERDUE_DAYS;
-  return {recOk, accOk, setOk, anyOk: recOk||accOk||setOk};
+  return {recOk, accOk, setOk, anyOk: recOk||accOk||setOk, unauthorized};
 }
 async function saveAccounts(){
   const ok = await sheetSet('accounts', {accounts: state.accounts});
@@ -383,9 +387,13 @@ async function saveRecords(){
   if(!ok) toast('Could not reach the Sheet — try again');
   return ok;
 }
-function setSheetUrl(url){
+function setSheetUrl(url, key){
   state.sheetUrl = url.trim();
   localStorage.setItem('commission_sheet_url', state.sheetUrl);
+  if(key!==undefined){
+    state.accessKey = key.trim();
+    localStorage.setItem('commission_access_key', state.accessKey);
+  }
 }
 
 /* ============================= BOOT (connect to Sheet first) ============================= */
@@ -394,7 +402,7 @@ async function boot(){
   if(!state.sheetUrl){ app.innerHTML = renderConnect(); attachConnectEvents(); return; }
   app.innerHTML = '<div class="login-wrap"><p class="hint">Connecting to your Google Sheet…</p></div>';
   const result = await loadAllFromSheet();
-  if(!result.anyOk){ app.innerHTML = renderConnect(true); attachConnectEvents(); return; }
+  if(!result.anyOk){ app.innerHTML = renderConnect(result.unauthorized ? 'unauthorized' : true); attachConnectEvents(); return; }
   const rememberedUser = localStorage.getItem('commission_session_user');
   if(rememberedUser){
     const account = findAccount(rememberedUser);
@@ -411,18 +419,20 @@ function renderConnect(failed){
       <div><h1>Commission Ledger</h1><p>Supplier &amp; agent commission tracker</p></div>
     </div>
     <h2 style="font-size:20px;">Connect to your Google Sheet</h2>
-    <p class="sub">${failed ? 'Could not reach that Sheet — double check the URL and deployment settings, then try again.' : 'This tool stores everything in a Google Sheet you control. Paste the Web app URL from your Apps Script deployment.'}</p>
+    <p class="sub">${failed==='unauthorized' ? 'Wrong Access Key — check the value in your Code.gs and try again.' : failed ? 'Could not reach that Sheet — double check the URL, the access key, and deployment settings, then try again.' : 'This tool stores everything in a Google Sheet you control. Paste the Web app URL and access key from your Apps Script deployment.'}</p>
     <div class="field"><label>Web app URL</label><input type="text" id="connect-url-input" value="${escapeHtml(state.sheetUrl)}" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <div class="field"><label>Access Key</label><input type="text" id="connect-key-input" value="${escapeHtml(state.accessKey)}" placeholder="The API_KEY value from your Code.gs"></div>
     <button class="btn btn-teal" id="connect-btn" style="width:100%;">Connect</button>
     <div class="error-msg" id="connect-error"></div>
-    <p class="hint">This is saved only in this browser. Everyone on your team pastes the same URL once, the first time they open this file.</p>
+    <p class="hint">Saved only in this browser. Everyone on your team enters the same URL and key once, the first time they open this file.</p>
   </div>`;
 }
 function attachConnectEvents(){
   document.getElementById('connect-btn').onclick = async ()=>{
     const url = document.getElementById('connect-url-input').value.trim();
+    const key = document.getElementById('connect-key-input').value.trim();
     if(!url){ document.getElementById('connect-error').textContent = 'Paste the Web app URL first.'; return; }
-    setSheetUrl(url);
+    setSheetUrl(url, key);
     await boot();
   };
 }
@@ -464,7 +474,7 @@ function attachBootstrapEvents(){
     const pw2 = document.getElementById('boot-password2').value;
     const err = document.getElementById('boot-error');
     if(!username){ err.textContent='Please choose a username.'; return; }
-    if(pw.length < 4){ err.textContent='Password should be at least 4 characters.'; return; }
+    if(pw.length < 8){ err.textContent='Password should be at least 8 characters.'; return; }
     if(pw !== pw2){ err.textContent='Passwords do not match.'; return; }
     const salt = randomSalt();
     const hash = await hashPassword(pw, salt);
@@ -493,15 +503,44 @@ function renderLogin(){
     <div class="error-msg" id="login-error"></div>
   </div>`;
 }
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCK_MS = 60000;
+function getLoginLock(){
+  try{ return JSON.parse(localStorage.getItem('commission_login_lock') || '{}'); }catch(e){ return {}; }
+}
+function setLoginLock(v){ localStorage.setItem('commission_login_lock', JSON.stringify(v)); }
 function attachLoginEvents(){
+  const lock = getLoginLock();
+  if(lock.until && Date.now() < lock.until){
+    const err = document.getElementById('login-error');
+    const secs = Math.ceil((lock.until - Date.now())/1000);
+    err.textContent = `Too many attempts. Try again in ${secs}s.`;
+    document.getElementById('login-btn').disabled = true;
+    setTimeout(()=>{ document.getElementById('login-btn').disabled = false; err.textContent=''; }, lock.until - Date.now());
+  }
   const doLogin = async ()=>{
+    const currentLock = getLoginLock();
+    if(currentLock.until && Date.now() < currentLock.until){ return; }
     const username = document.getElementById('login-username').value.trim();
     const pw = document.getElementById('login-password').value;
     const err = document.getElementById('login-error');
     const account = findAccount(username);
-    if(!account){ err.textContent='No account with that username.'; return; }
+    const fail = ()=>{
+      const l = getLoginLock();
+      const count = (l.count||0) + 1;
+      if(count >= LOGIN_MAX_ATTEMPTS){
+        setLoginLock({count:0, until: Date.now() + LOGIN_LOCK_MS});
+        err.textContent = `Too many attempts. Try again in ${LOGIN_LOCK_MS/1000}s.`;
+        document.getElementById('login-btn').disabled = true;
+        setTimeout(()=>{ const b=document.getElementById('login-btn'); if(b) b.disabled=false; }, LOGIN_LOCK_MS);
+      } else {
+        setLoginLock({count, until:0});
+      }
+    };
+    if(!account){ err.textContent='No account with that username.'; fail(); return; }
     const hash = await hashPassword(pw, account.salt);
-    if(hash !== account.hash){ err.textContent='Incorrect password.'; return; }
+    if(hash !== account.hash){ err.textContent='Incorrect password.'; fail(); return; }
+    setLoginLock({count:0, until:0});
     state.role = account.role; state.currentUser = account.username; state.currentView='dashboard';
     localStorage.setItem('commission_session_user', account.username);
     render();
@@ -1083,6 +1122,7 @@ function renderAdmin(){
     <h3>Backend connection</h3>
     <p class="desc">This browser is talking to the Google Sheet below. Every save, edit, and delete goes straight into it — there's no separate copy to keep in sync.</p>
     <div class="field"><label>Web app URL</label><input type="text" id="backend-url-input" value="${escapeHtml(state.sheetUrl)}"></div>
+    <div class="field"><label>Access Key</label><input type="text" id="backend-key-input" value="${escapeHtml(state.accessKey)}"></div>
     <div class="form-actions">
       <button class="btn btn-primary" id="reconnect-btn">Reconnect</button>
       <button class="btn" id="refresh-from-admin-btn">Refresh now</button>
@@ -1104,7 +1144,7 @@ function attachAdminEvents(){
       const uname = b.getAttribute('data-username');
       const newPw = prompt(`Set a new password for "${uname}":`);
       if(!newPw) return;
-      if(newPw.length < 4){ toast('Password should be at least 4 characters'); return; }
+      if(newPw.length < 8){ toast('Password should be at least 8 characters'); return; }
       const acc = findAccount(uname);
       acc.salt = randomSalt();
       acc.hash = await hashPassword(newPw, acc.salt);
@@ -1119,7 +1159,7 @@ function attachAdminEvents(){
     const err = document.getElementById('account-error');
     if(!username){ err.textContent = 'Enter a username.'; return; }
     if(findAccount(username)){ err.textContent = 'That username is already taken.'; return; }
-    if(pw.length < 4){ err.textContent = 'Password should be at least 4 characters.'; return; }
+    if(pw.length < 8){ err.textContent = 'Password should be at least 8 characters.'; return; }
     const salt = randomSalt();
     const hash = await hashPassword(pw, salt);
     state.accounts.push({username, salt, hash, role, createdAt:new Date().toISOString()});
@@ -1137,11 +1177,12 @@ function attachAdminEvents(){
   };
   document.getElementById('reconnect-btn').onclick = async ()=>{
     const url = document.getElementById('backend-url-input').value.trim();
+    const key = document.getElementById('backend-key-input').value.trim();
     if(!url){ document.getElementById('backend-status').textContent = 'Paste a Web app URL first.'; return; }
-    setSheetUrl(url);
+    setSheetUrl(url, key);
     document.getElementById('backend-status').textContent = 'Reconnecting…';
     const result = await loadAllFromSheet();
-    document.getElementById('backend-status').textContent = result.anyOk ? 'Reconnected.' : 'Could not reach that URL — check the deployment settings.';
+    document.getElementById('backend-status').textContent = result.anyOk ? 'Reconnected.' : (result.unauthorized ? 'Wrong Access Key — check Code.gs and try again.' : 'Could not reach that URL — check the deployment settings.');
     if(result.anyOk){ toast('Reconnected'); renderView(); }
   };
   document.getElementById('refresh-from-admin-btn').onclick = async ()=>{
